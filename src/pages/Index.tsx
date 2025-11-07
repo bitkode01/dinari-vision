@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { BalanceCard } from "@/components/BalanceCard";
 import { SummaryCard } from "@/components/SummaryCard";
 import { FeatureButton } from "@/components/FeatureButton";
 import { TransactionItem } from "@/components/TransactionItem";
 import { BottomNav } from "@/components/BottomNav";
-import { TrendingUp, TrendingDown, Camera, FileText } from "lucide-react";
+import { TrendingUp, TrendingDown, Camera, FileText, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("home");
+
+  // Redirect to auth if not authenticated
+  useEffect(() => {
+    if (!user) {
+      window.location.href = "/auth";
+    }
+  }, [user]);
 
   // Sample data
   const balance = 10500;
@@ -25,9 +34,20 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="px-6 pt-8 pb-6 text-center">
-        <h1 className="text-3xl font-bold text-foreground">Dinari Wallet</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Kelola keuangan dengan mudah</p>
+      <div className="flex items-center justify-between px-6 pt-8 pb-6">
+        <div className="text-center flex-1">
+          <h1 className="text-3xl font-bold text-foreground">Dinari Wallet</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Kelola keuangan dengan mudah</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={signOut}
+          className="text-muted-foreground hover:text-destructive"
+          title="Keluar"
+        >
+          <LogOut className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Main Content */}
