@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Poppins', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -60,6 +63,7 @@ export default {
       boxShadow: {
         'card': 'var(--shadow-card)',
         'button': 'var(--shadow-button)',
+        'feature': 'var(--shadow-feature)',
       },
       borderRadius: {
         lg: "var(--radius)",

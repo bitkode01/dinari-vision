@@ -9,10 +9,10 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Dinari Wallet Dark Theme - Mobile Finance App */
-    --background: 210 65% 11%;
+    --background: 210 65% 8%;
     --foreground: 210 20% 98%;
 
-    --card: 210 50% 15%;
+    --card: 210 45% 12%;
     --card-foreground: 210 20% 98%;
 
     --popover: 210 50% 15%;
@@ -26,8 +26,8 @@ All colors MUST be HSL.
     --secondary: 210 40% 20%;
     --secondary-foreground: 210 20% 98%;
 
-    --muted: 210 30% 25%;
-    --muted-foreground: 210 15% 65%;
+    --muted: 210 30% 22%;
+    --muted-foreground: 210 15% 70%;
 
     /* Accent - Purple */
     --accent: 268 92% 58%;
@@ -41,20 +41,21 @@ All colors MUST be HSL.
     --destructive: 0 100% 62%;
     --destructive-foreground: 210 20% 98%;
 
-    --border: 210 30% 25%;
+    --border: 210 30% 22%;
     --input: 210 30% 25%;
     --ring: 219 91% 54%;
 
     --radius: 1rem;
 
     /* Custom gradients for Dinari Wallet */
-    --gradient-blue: linear-gradient(135deg, hsl(210, 65%, 25%), hsl(219, 91%, 54%));
-    --gradient-purple: linear-gradient(135deg, hsl(268, 92%, 58%), hsl(320, 85%, 55%));
+    --gradient-blue: linear-gradient(135deg, hsl(219, 80%, 45%), hsl(219, 91%, 58%));
+    --gradient-purple: linear-gradient(135deg, hsl(268, 92%, 55%), hsl(290, 85%, 60%));
     --gradient-card: linear-gradient(135deg, hsl(210, 50%, 15%), hsl(210, 50%, 18%));
 
     /* Shadows */
-    --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.3);
-    --shadow-button: 0 4px 12px rgba(30, 92, 245, 0.3);
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --shadow-button: 0 4px 16px rgba(30, 92, 245, 0.25);
+    --shadow-feature: 0 8px 32px rgba(160, 32, 240, 0.2);
   }
 
   .dark {
@@ -97,6 +98,6 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }

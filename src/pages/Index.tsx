@@ -91,17 +91,15 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="px-6 pt-8 pb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-foreground">Dinari Wallet</h1>
-        </div>
-        <p className="text-sm text-muted-foreground">
+      <div className="px-4 pt-6 pb-4">
+        <h1 className="text-2xl font-bold text-foreground mb-1">Dinari Wallet</h1>
+        <p className="text-sm font-medium text-muted-foreground">
           Selamat datang, {profile?.full_name || 'User'}! 👋
         </p>
       </div>
 
       {/* Main Content */}
-      <div className="space-y-6 px-6">
+      <div className="space-y-4 px-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -112,7 +110,7 @@ const Index = () => {
             <BalanceCard balance={summary.balance} />
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <SummaryCard
                 title="Pemasukan"
                 amount={summary.income}
@@ -130,7 +128,7 @@ const Index = () => {
         )}
 
         {/* Feature Buttons */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <FeatureButton
             title="Scan Struk"
             description="Scan otomatis dengan OCR"
@@ -148,19 +146,19 @@ const Index = () => {
         </div>
 
         {/* Recent Transactions */}
-        <div className="rounded-2xl bg-card p-5 shadow-card">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Transaksi Terbaru</h2>
+        <div className="rounded-2xl bg-card p-4 shadow-card">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-foreground">Transaksi Terbaru</h2>
             <Button
               variant="ghost"
               size="sm"
-              className="text-primary hover:text-primary/80"
+              className="text-sm text-primary hover:text-primary/80 h-8"
               onClick={() => navigate("/history")}
             >
               Lihat Semua
             </Button>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-0">
             {isLoading ? (
               <div className="py-8 text-center text-muted-foreground">
                 Memuat transaksi...

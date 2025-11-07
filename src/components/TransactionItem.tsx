@@ -27,22 +27,22 @@ export const TransactionItem = ({
   const sign = type === "income" ? "+" : "-";
 
   return (
-    <div className="group flex items-center justify-between border-b border-border/50 py-3 last:border-0 hover:bg-muted/30 transition-colors rounded-lg px-2">
-      <div className="flex-1">
-        <p className="font-medium text-foreground">{title}</p>
-        <div className="flex items-center gap-2">
+    <div className="group flex items-center justify-between border-b border-border/50 py-2.5 last:border-0 hover:bg-muted/30 transition-colors rounded-lg px-1.5">
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-foreground text-sm truncate">{title}</p>
+        <div className="flex items-center gap-1.5 mt-0.5">
           <p className="text-xs text-muted-foreground">{date}</p>
           {category && (
             <>
               <span className="text-xs text-muted-foreground">•</span>
-              <span className="text-xs text-muted-foreground">{category}</span>
+              <span className="text-xs text-muted-foreground truncate">{category}</span>
             </>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <p className={`text-lg font-semibold ${amountColor}`}>
-          {sign} {formatCurrency(amount).replace('IDR', 'Rp')}
+      <div className="flex items-center gap-2 ml-2">
+        <p className={`text-base font-semibold ${amountColor} whitespace-nowrap`}>
+          {formatCurrency(amount).replace('IDR', 'Rp')}
         </p>
         {(onEdit || onDelete) && (
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
