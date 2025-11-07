@@ -32,6 +32,11 @@ export const ReceiptScanner = ({ open, onOpenChange, onAmountDetected }: Receipt
   const startCamera = async () => {
     setCameraError(null);
     try {
+      // Check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Browser tidak mendukung akses kamera");
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: facingMode,
@@ -42,14 +47,24 @@ export const ReceiptScanner = ({ open, onOpenChange, onAmountDetected }: Receipt
       });
       
       setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
       setShowCamera(true);
+      
+      // Wait a bit for video element to be ready
+      setTimeout(() => {
+        if (videoRef.current && mediaStream) {
+          videoRef.current.srcObject = mediaStream;
+          // Ensure video plays
+          videoRef.current.play().catch(err => {
+            console.error("Error playing video:", err);
+          });
+        }
+      }, 100);
+      
       toast.success("Kamera aktif");
     } catch (error) {
       console.error("Camera error:", error);
-      setCameraError("Tidak dapat mengakses kamera. Silakan gunakan galeri.");
+      const errorMessage = error instanceof Error ? error.message : "Tidak dapat mengakses kamera";
+      setCameraError(errorMessage + ". Silakan gunakan galeri.");
       toast.error("Akses kamera dibutuhkan untuk scan struk.");
     }
   };
@@ -125,6 +140,16 @@ export const ReceiptScanner = ({ open, onOpenChange, onAmountDetected }: Receipt
       startCamera();
     }
   }, [facingMode]);
+
+  // Ensure video plays when stream is set
+  useEffect(() => {
+    if (videoRef.current && stream && showCamera) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(err => {
+        console.error("Error playing video:", err);
+      });
+    }
+  }, [stream, showCamera]);
 
   // Cleanup on unmount or close
   useEffect(() => {
@@ -233,16 +258,28 @@ export const ReceiptScanner = ({ open, onOpenChange, onAmountDetected }: Receipt
           ) : showCamera ? (
             <div className="space-y-4">
               {/* Camera Preview */}
-              <div className="relative rounded-lg overflow-hidden bg-black">
+              <div className="relative rounded-lg overflow-hidden bg-black" style={{ height: '400px' }}>
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
-                  className="w-full h-[400px] object-cover"
+                  muted
+                  onLoadedMetadata={() => {
+                    console.log("Video metadata loaded");
+                    if (videoRef.current) {
+                      videoRef.current.play().catch(err => console.error("Play error:", err));
+                    }
+                  }}
+                  onError={(e) => {
+                    console.error("Video element error:", e);
+                    toast.error("Error pada video preview");
+                  }}
+                  className="w-full h-full object-cover"
+                  style={{ display: 'block' }}
                 />
                 {/* Guideline Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="border-2 border-white border-dashed rounded-lg w-4/5 h-3/4 pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="border-2 border-white border-dashed rounded-lg w-4/5 h-3/4">
                     <div className="absolute top-2 left-2 right-2 text-center">
                       <p className="text-white text-sm bg-black/50 rounded px-2 py-1 inline-block">
                         Posisikan struk dalam kotak
@@ -250,6 +287,16 @@ export const ReceiptScanner = ({ open, onOpenChange, onAmountDetected }: Receipt
                     </div>
                   </div>
                 </div>
+                
+                {/* Loading indicator while stream connects */}
+                {!stream && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-white" />
+                      <p className="text-sm text-white">Memuat kamera...</p>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Hidden canvas for capture */}
