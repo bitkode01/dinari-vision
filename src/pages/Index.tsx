@@ -8,6 +8,7 @@ import { TransactionItem } from "@/components/TransactionItem";
 import { BottomNav } from "@/components/BottomNav";
 import { AddTransactionDialog } from "@/components/AddTransactionDialog";
 import { EditTransactionDialog } from "@/components/EditTransactionDialog";
+import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { TrendingUp, TrendingDown, Camera, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
@@ -34,6 +35,8 @@ const Index = () => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannedAmount, setScannedAmount] = useState<number | null>(null);
   const navigate = useNavigate();
 
   // Fetch user profile
@@ -78,6 +81,11 @@ const Index = () => {
       setAddDialogOpen(true);
     }
     setActiveTab(tab);
+  };
+
+  const handleAmountDetected = (amount: number) => {
+    setScannedAmount(amount);
+    setAddDialogOpen(true);
   };
 
   return (
@@ -125,10 +133,10 @@ const Index = () => {
         <div className="grid grid-cols-2 gap-4">
           <FeatureButton
             title="Scan Struk"
-            description="Segera hadir!"
+            description="Scan otomatis dengan OCR"
             icon={Camera}
             gradient="purple"
-            onClick={() => toast.info("Fitur scan struk akan segera hadir!")}
+            onClick={() => setScannerOpen(true)}
           />
           <FeatureButton
             title="Pengaturan"
@@ -187,7 +195,21 @@ const Index = () => {
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Floating Add Button */}
-      <AddTransactionDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <AddTransactionDialog 
+        open={addDialogOpen} 
+        onOpenChange={(open) => {
+          setAddDialogOpen(open);
+          if (!open) setScannedAmount(null);
+        }}
+        initialAmount={scannedAmount}
+      />
+
+      {/* Receipt Scanner */}
+      <ReceiptScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onAmountDetected={handleAmountDetected}
+      />
 
       {/* Edit Transaction Dialog */}
       <EditTransactionDialog

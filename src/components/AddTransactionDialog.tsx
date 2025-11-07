@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTransactions } from "@/hooks/useTransactions";
 import {
   Dialog,
@@ -30,10 +30,12 @@ const categories = {
 
 export const AddTransactionDialog = ({ 
   open, 
-  onOpenChange 
+  onOpenChange,
+  initialAmount 
 }: { 
   open?: boolean; 
-  onOpenChange?: (open: boolean) => void 
+  onOpenChange?: (open: boolean) => void;
+  initialAmount?: number | null;
 }) => {
   const { createTransaction, isCreating } = useTransactions();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -49,6 +51,14 @@ export const AddTransactionDialog = ({
   const [type, setType] = useState<"income" | "expense">("expense");
   const [category, setCategory] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Set amount when initialAmount changes
+  useEffect(() => {
+    if (initialAmount) {
+      setAmount(initialAmount.toString());
+      setType("expense");
+    }
+  }, [initialAmount]);
 
   const resetForm = () => {
     setTitle("");
