@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTransactions, type Transaction } from "@/hooks/useTransactions";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { TransactionItem } from "@/components/TransactionItem";
 import { TransactionItemSkeleton } from "@/components/skeletons/TransactionItemSkeleton";
 import { BottomNav } from "@/components/BottomNav";
@@ -9,6 +11,7 @@ import { AddTransactionDialog } from "@/components/AddTransactionDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Filter, X, Calendar } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, isToday, isThisWeek, isThisMonth, parseISO, format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { toast } from "sonner";
@@ -58,6 +61,7 @@ type DateFilter = "all" | "today" | "week" | "month" | "custom";
 
 const History = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { transactions, isLoading, deleteTransaction } = useTransactions();
   const [activeTab, setActiveTab] = useState("history");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -71,6 +75,17 @@ const History = () => {
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [displayCount, setDisplayCount] = useState(20);
+
+  // Pull to refresh handler
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    toast.success("Data berhasil dimuat ulang");
+  };
+
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: handleRefresh,
+    threshold: 80,
+  });
 
   // Filter transactions
   const filteredTransactions = useMemo(() => {
@@ -140,10 +155,17 @@ const History = () => {
     (categoryFilter !== "Semua" ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border/50">
-        <div className="px-6 pt-8 pb-4">
+    <PullToRefresh
+      pullDistance={pullToRefresh.pullDistance}
+      isRefreshing={pullToRefresh.isRefreshing}
+      progress={pullToRefresh.progress}
+      containerRef={pullToRefresh.containerRef}
+      handlers={pullToRefresh.handlers}
+    >
+      <div className="min-h-screen bg-background pb-24">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border/50">
+          <div className="px-6 pt-8 pb-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Riwayat</h1>
@@ -352,7 +374,8 @@ const History = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </PullToRefresh>
   );
 };
 

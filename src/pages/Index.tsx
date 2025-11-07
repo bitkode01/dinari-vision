@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTransactions, type Transaction } from "@/hooks/useTransactions";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { BalanceCard } from "@/components/BalanceCard";
 import { SummaryCard } from "@/components/SummaryCard";
 import { FeatureButton } from "@/components/FeatureButton";
@@ -17,8 +19,9 @@ import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,10 +32,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 
 const Index = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { transactions, isLoading, summary, deleteTransaction } = useTransactions();
   const [activeTab, setActiveTab] = useState("home");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -41,6 +44,20 @@ const Index = () => {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannedAmount, setScannedAmount] = useState<number | null>(null);
   const navigate = useNavigate();
+
+  // Pull to refresh handler
+  const handleRefresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      queryClient.invalidateQueries({ queryKey: ['profile'] }),
+    ]);
+    toast.success("Data berhasil dimuat ulang");
+  };
+
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: handleRefresh,
+    threshold: 80,
+  });
 
   // Fetch user profile
   const { data: profile } = useQuery({
@@ -92,17 +109,24 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="px-4 pt-6 pb-4">
-        <h1 className="text-2xl font-bold text-foreground mb-1">Dinari Wallet</h1>
-        <p className="text-sm font-medium text-muted-foreground">
-          Selamat datang, {profile?.full_name || 'User'}! 👋
-        </p>
-      </div>
+    <PullToRefresh
+      pullDistance={pullToRefresh.pullDistance}
+      isRefreshing={pullToRefresh.isRefreshing}
+      progress={pullToRefresh.progress}
+      containerRef={pullToRefresh.containerRef}
+      handlers={pullToRefresh.handlers}
+    >
+      <div className="min-h-screen bg-background pb-24">
+        {/* Header */}
+        <div className="px-4 pt-6 pb-4">
+          <h1 className="text-2xl font-bold text-foreground mb-1">Dinari Wallet</h1>
+          <p className="text-sm font-medium text-muted-foreground">
+            Selamat datang, {profile?.full_name || 'User'}! 👋
+          </p>
+        </div>
 
-      {/* Main Content */}
-      <div className="space-y-4 px-4">
+        {/* Main Content */}
+        <div className="space-y-4 px-4">
         {isLoading ? (
           <>
             {/* Skeleton Loading States */}
@@ -202,6 +226,7 @@ const Index = () => {
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+      </div>
 
       {/* Floating Add Button */}
       <AddTransactionDialog 
@@ -247,7 +272,7 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PullToRefresh>
   );
 };
 
