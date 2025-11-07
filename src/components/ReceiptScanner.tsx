@@ -233,26 +233,26 @@ export const ReceiptScanner = ({ open, onOpenChange, onAmountDetected }: Receipt
                 <span>Buka Kamera</span>
               </Button>
 
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-20 flex flex-col gap-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-6 w-6" />
+                <span>Pilih dari Galeri</span>
+              </Button>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+
               {cameraError && (
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-2">{cameraError}</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-20 flex flex-col gap-2"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="h-6 w-6" />
-                    <span>Pilih dari Galeri</span>
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
-                </div>
+                <p className="text-sm text-center text-muted-foreground">{cameraError}</p>
               )}
             </div>
           ) : showCamera ? (
