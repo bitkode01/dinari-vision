@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTransactions } from "@/hooks/useTransactions";
+import { BudgetManagement } from "@/components/BudgetManagement";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BottomNav } from "@/components/BottomNav";
@@ -97,6 +98,9 @@ const Settings = () => {
 
       {/* Main Content */}
       <div className="space-y-4 px-6">
+        {/* Budget Management */}
+        <BudgetManagement />
+
         {/* Profile Card */}
         <Card className="p-5">
           <h2 className="text-lg font-semibold text-foreground mb-4">Informasi Akun</h2>

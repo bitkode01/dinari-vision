@@ -1,9 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useBudgets } from "@/hooks/useBudgets";
+import { useBudgetAlerts } from "@/hooks/useBudgetAlerts";
 import { BottomNav } from "@/components/BottomNav";
 import { AddTransactionDialog } from "@/components/AddTransactionDialog";
 import { Card } from "@/components/ui/card";
-import { Loader2, TrendingUp, TrendingDown, PieChart as PieChartIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Loader2, TrendingUp, TrendingDown, PieChart as PieChartIcon, AlertTriangle } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -47,6 +51,9 @@ const Stats = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString());
+  
+  // Fetch budgets for selected month/year
+  const { budgets } = useBudgets(parseInt(selectedMonth), parseInt(selectedYear));
 
   const handleTabChange = (tab: string) => {
     if (tab === "add") {
@@ -74,7 +81,7 @@ const Stats = () => {
     });
   }, [transactions, selectedYear, selectedMonth]);
 
-  // Calculate category breakdown for pie chart (expenses only)
+  // Calculate category breakdown for pie chart (expenses only) with budget comparison
   const categoryData = useMemo(() => {
     const expenseTransactions = filteredTransactions.filter((t) => t.type === "expense");
     const categoryTotals: Record<string, number> = {};
@@ -85,13 +92,18 @@ const Stats = () => {
     });
 
     return Object.entries(categoryTotals)
-      .map(([name, value]) => ({
-        name,
-        value,
-        percentage: 0,
-      }))
+      .map(([name, value]) => {
+        const budget = budgets.find((b) => b.category === name);
+        return {
+          name,
+          value,
+          percentage: 0,
+          budget: budget ? Number(budget.amount) : null,
+          budgetPercentage: budget ? (value / Number(budget.amount)) * 100 : null,
+        };
+      })
       .sort((a, b) => b.value - a.value);
-  }, [filteredTransactions]);
+  }, [filteredTransactions, budgets]);
 
   // Calculate total for percentages
   const totalExpense = categoryData.reduce((sum, item) => sum + item.value, 0);
@@ -162,6 +174,18 @@ const Stats = () => {
     return { income, expense, balance: income - expense };
   }, [filteredTransactions]);
 
+  // Budget alert notifications (only for categories with budgets that are over 80%)
+  const budgetAlerts = useMemo(() => {
+    return categoryData
+      .filter((cat) => cat.budgetPercentage !== null && cat.budgetPercentage >= 80)
+      .map((cat) => ({
+        category: cat.name,
+        percentage: cat.budgetPercentage!,
+      }));
+  }, [categoryData]);
+
+  useBudgetAlerts(budgetAlerts);
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -219,6 +243,30 @@ const Stats = () => {
 
       {/* Content */}
       <div className="px-6 py-4 space-y-6">
+        {/* Budget Info Banner */}
+        {budgets.length === 0 && (
+          <Card className="p-4 bg-primary/5 border-primary/20">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-primary mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground mb-1">
+                  Set Budget Anda
+                </h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Pantau pengeluaran dengan lebih baik dengan mengatur budget per kategori
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.location.href = "/settings"}
+                >
+                  Atur Budget
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-4">
           <Card className="p-4">
@@ -316,17 +364,60 @@ const Stats = () => {
               </ResponsiveContainer>
               <div className="mt-4 space-y-2">
                 {categoryDataWithPercentage.map((item, index) => (
-                  <div key={item.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                      />
-                      <span className="text-sm text-foreground">{item.name}</span>
+                  <div key={item.name} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="text-sm text-foreground">{item.name}</span>
+                      </div>
+                      <span className="text-sm font-medium text-foreground">
+                        {formatCurrency(item.value).replace("IDR", "Rp")}
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-foreground">
-                      {formatCurrency(item.value).replace("IDR", "Rp")}
-                    </span>
+                    {item.budget && (
+                      <div className="ml-5 space-y-1">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>
+                            Budget: {formatCurrency(item.budget).replace("IDR", "Rp")}
+                          </span>
+                          <span className={
+                            item.budgetPercentage! >= 100
+                              ? "text-destructive font-medium"
+                              : item.budgetPercentage! >= 80
+                              ? "text-yellow-500 font-medium"
+                              : ""
+                          }>
+                            {item.budgetPercentage!.toFixed(0)}%
+                          </span>
+                        </div>
+                        <Progress
+                          value={Math.min(item.budgetPercentage!, 100)}
+                          className="h-2"
+                          indicatorClassName={
+                            item.budgetPercentage! >= 100
+                              ? "bg-destructive"
+                              : item.budgetPercentage! >= 80
+                              ? "bg-yellow-500"
+                              : "bg-success"
+                          }
+                        />
+                        {item.budgetPercentage! >= 100 && (
+                          <div className="flex items-center gap-1 text-xs text-destructive">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>Budget terlampaui!</span>
+                          </div>
+                        )}
+                        {item.budgetPercentage! >= 80 && item.budgetPercentage! < 100 && (
+                          <div className="flex items-center gap-1 text-xs text-yellow-600">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>Mendekati limit budget</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
