@@ -132,10 +132,24 @@ export const RecurringTransactionManagement = () => {
       if (editingTransaction) {
         updateRecurringTransaction({
           id: editingTransaction.id,
-          ...validated,
+          title: validated.title,
+          amount: validated.amount,
+          type: validated.type,
+          category: validated.category,
+          frequency: validated.frequency,
+          next_run_date: validated.next_run_date,
+          notes: validated.notes,
         });
       } else {
-        createRecurringTransaction(validated);
+        createRecurringTransaction({
+          title: validated.title,
+          amount: validated.amount,
+          type: validated.type,
+          category: validated.category,
+          frequency: validated.frequency,
+          next_run_date: validated.next_run_date,
+          notes: validated.notes,
+        });
       }
 
       setIsDialogOpen(false);
