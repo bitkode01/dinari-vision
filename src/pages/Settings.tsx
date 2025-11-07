@@ -4,6 +4,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BottomNav } from "@/components/BottomNav";
+import { AddTransactionDialog } from "@/components/AddTransactionDialog";
 import { Loader2, LogOut, Trash2, User, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState("settings");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -68,6 +70,13 @@ const Settings = () => {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleTabChange = (tab: string) => {
+    if (tab === "add") {
+      setAddDialogOpen(true);
+    }
+    setActiveTab(tab);
   };
 
   if (profileLoading) {
@@ -170,7 +179,10 @@ const Settings = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+
+      {/* Add Transaction Dialog */}
+      <AddTransactionDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

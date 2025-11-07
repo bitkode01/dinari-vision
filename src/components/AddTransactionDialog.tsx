@@ -28,10 +28,20 @@ const categories = {
   expense: ["Makanan", "Transport", "Belanja", "Hiburan", "Tagihan", "Lainnya"],
 };
 
-export const AddTransactionDialog = () => {
+export const AddTransactionDialog = ({ 
+  open, 
+  onOpenChange 
+}: { 
+  open?: boolean; 
+  onOpenChange?: (open: boolean) => void 
+}) => {
   const { createTransaction, isCreating } = useTransactions();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Use controlled state if provided, otherwise use internal state
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   // Form state
   const [title, setTitle] = useState("");
@@ -86,7 +96,7 @@ export const AddTransactionDialog = () => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           size="lg"

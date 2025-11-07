@@ -33,6 +33,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   // Fetch user profile
@@ -70,6 +71,13 @@ const Index = () => {
   const handleDelete = (id: string) => {
     deleteTransaction(id);
     setDeleteConfirmId(null);
+  };
+
+  const handleTabChange = (tab: string) => {
+    if (tab === "add") {
+      setAddDialogOpen(true);
+    }
+    setActiveTab(tab);
   };
 
   return (
@@ -139,7 +147,7 @@ const Index = () => {
               variant="ghost"
               size="sm"
               className="text-primary hover:text-primary/80"
-              onClick={() => console.log("Lihat semua")}
+              onClick={() => navigate("/history")}
             >
               Lihat Semua
             </Button>
@@ -176,10 +184,10 @@ const Index = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Floating Add Button */}
-      <AddTransactionDialog />
+      <AddTransactionDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
 
       {/* Edit Transaction Dialog */}
       <EditTransactionDialog
