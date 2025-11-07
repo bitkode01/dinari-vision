@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTransactions } from "@/hooks/useTransactions";
 import { BalanceCard } from "@/components/BalanceCard";
 import { SummaryCard } from "@/components/SummaryCard";
 import { FeatureButton } from "@/components/FeatureButton";
 import { TransactionItem } from "@/components/TransactionItem";
 import { BottomNav } from "@/components/BottomNav";
-import { TrendingUp, TrendingDown, Camera, FileText, LogOut } from "lucide-react";
+import { TrendingUp, TrendingDown, Camera, FileText, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatDistanceToNow } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { transactions, isLoading, summary } = useTransactions();
   const [activeTab, setActiveTab] = useState("home");
 
   // Redirect to auth if not authenticated
@@ -19,17 +23,8 @@ const Index = () => {
     }
   }, [user]);
 
-  // Sample data
-  const balance = 10500;
-  const income = 38000;
-  const expense = 27500;
-
-  const recentTransactions = [
-    { id: 1, title: "Beli kopi di kafe Batu", amount: 15000, type: "expense" as const, date: "Hari ini, 14:30" },
-    { id: 2, title: "Gaji bulanan", amount: 5000000, type: "income" as const, date: "Kemarin, 09:00" },
-    { id: 3, title: "Belanja bulanan", amount: 250000, type: "expense" as const, date: "2 hari lalu" },
-    { id: 4, title: "Freelance project", amount: 1500000, type: "income" as const, date: "3 hari lalu" },
-  ];
+  // Get recent transactions (top 4)
+  const recentTransactions = transactions.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -52,24 +47,32 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="space-y-6 px-6">
-        {/* Balance Card */}
-        <BalanceCard balance={balance} />
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Balance Card */}
+            <BalanceCard balance={summary.balance} />
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <SummaryCard
-            title="Pemasukan"
-            amount={income}
-            icon={TrendingUp}
-            type="income"
-          />
-          <SummaryCard
-            title="Pengeluaran"
-            amount={expense}
-            icon={TrendingDown}
-            type="expense"
-          />
-        </div>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 gap-4">
+              <SummaryCard
+                title="Pemasukan"
+                amount={summary.income}
+                icon={TrendingUp}
+                type="income"
+              />
+              <SummaryCard
+                title="Pengeluaran"
+                amount={summary.expense}
+                icon={TrendingDown}
+                type="expense"
+              />
+            </div>
+          </>
+        )}
 
         {/* Feature Buttons */}
         <div className="grid grid-cols-2 gap-4">
@@ -103,15 +106,28 @@ const Index = () => {
             </Button>
           </div>
           <div className="space-y-1">
-            {recentTransactions.map((transaction) => (
-              <TransactionItem
-                key={transaction.id}
-                title={transaction.title}
-                amount={transaction.amount}
-                type={transaction.type}
-                date={transaction.date}
-              />
-            ))}
+            {isLoading ? (
+              <div className="py-8 text-center text-muted-foreground">
+                Memuat transaksi...
+              </div>
+            ) : recentTransactions.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                Belum ada transaksi. Mulai tambahkan transaksi pertama Anda!
+              </div>
+            ) : (
+              recentTransactions.map((transaction) => (
+                <TransactionItem
+                  key={transaction.id}
+                  title={transaction.title}
+                  amount={Number(transaction.amount)}
+                  type={transaction.type}
+                  date={formatDistanceToNow(new Date(transaction.date), {
+                    addSuffix: true,
+                    locale: localeId,
+                  })}
+                />
+              ))
+            )}
           </div>
         </div>
       </div>
