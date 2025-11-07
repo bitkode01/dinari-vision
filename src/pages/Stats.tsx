@@ -4,10 +4,13 @@ import { useBudgets } from "@/hooks/useBudgets";
 import { useBudgetAlerts } from "@/hooks/useBudgetAlerts";
 import { BottomNav } from "@/components/BottomNav";
 import { AddTransactionDialog } from "@/components/AddTransactionDialog";
+import { SummaryCardSkeleton } from "@/components/skeletons/SummaryCardSkeleton";
+import { ChartSkeleton } from "@/components/skeletons/ChartSkeleton";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, TrendingUp, TrendingDown, PieChart as PieChartIcon, AlertTriangle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TrendingUp, TrendingDown, PieChart as PieChartIcon, AlertTriangle } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -186,14 +189,6 @@ const Stats = () => {
 
   useBudgetAlerts(budgetAlerts);
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
@@ -243,8 +238,21 @@ const Stats = () => {
 
       {/* Content */}
       <div className="px-6 py-4 space-y-6">
-        {/* Budget Info Banner */}
-        {budgets.length === 0 && (
+        {isLoading ? (
+          <>
+            {/* Skeleton Loading States */}
+            <div className="grid grid-cols-2 gap-4">
+              <SummaryCardSkeleton />
+              <SummaryCardSkeleton />
+            </div>
+            <ChartSkeleton height={250} />
+            <ChartSkeleton height={300} />
+            <ChartSkeleton height={300} />
+          </>
+        ) : (
+          <>
+            {/* Budget Info Banner */}
+            {budgets.length === 0 && (
           <Card className="p-4 bg-primary/5 border-primary/20">
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-primary mt-0.5" />
@@ -484,6 +492,8 @@ const Stats = () => {
             </div>
           )}
         </Card>
+          </>
+        )}
       </div>
 
       {/* Bottom Navigation */}

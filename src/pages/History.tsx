@@ -2,12 +2,13 @@ import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTransactions, type Transaction } from "@/hooks/useTransactions";
 import { TransactionItem } from "@/components/TransactionItem";
+import { TransactionItemSkeleton } from "@/components/skeletons/TransactionItemSkeleton";
 import { BottomNav } from "@/components/BottomNav";
 import { EditTransactionDialog } from "@/components/EditTransactionDialog";
 import { AddTransactionDialog } from "@/components/AddTransactionDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Filter, X, Calendar } from "lucide-react";
+import { Filter, X, Calendar } from "lucide-react";
 import { formatDistanceToNow, isToday, isThisWeek, isThisMonth, parseISO, format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { toast } from "sonner";
@@ -255,8 +256,10 @@ const History = () => {
       {/* Content */}
       <div className="px-6 py-4">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="space-y-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <TransactionItemSkeleton key={i} />
+            ))}
           </div>
         ) : filteredTransactions.length === 0 ? (
           <Card className="p-8 text-center">

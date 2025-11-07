@@ -9,7 +9,10 @@ import { BottomNav } from "@/components/BottomNav";
 import { AddTransactionDialog } from "@/components/AddTransactionDialog";
 import { EditTransactionDialog } from "@/components/EditTransactionDialog";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
-import { TrendingUp, TrendingDown, Camera, FileText, Loader2 } from "lucide-react";
+import { BalanceCardSkeleton } from "@/components/skeletons/BalanceCardSkeleton";
+import { SummaryCardSkeleton } from "@/components/skeletons/SummaryCardSkeleton";
+import { TransactionItemSkeleton } from "@/components/skeletons/TransactionItemSkeleton";
+import { TrendingUp, TrendingDown, Camera, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -101,9 +104,14 @@ const Index = () => {
       {/* Main Content */}
       <div className="space-y-4 px-4">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+          <>
+            {/* Skeleton Loading States */}
+            <BalanceCardSkeleton />
+            <div className="grid grid-cols-2 gap-3">
+              <SummaryCardSkeleton />
+              <SummaryCardSkeleton />
+            </div>
+          </>
         ) : (
           <>
             {/* Balance Card */}
@@ -160,9 +168,12 @@ const Index = () => {
           </div>
           <div className="space-y-0">
             {isLoading ? (
-              <div className="py-8 text-center text-muted-foreground">
-                Memuat transaksi...
-              </div>
+              <>
+                <TransactionItemSkeleton />
+                <TransactionItemSkeleton />
+                <TransactionItemSkeleton />
+                <TransactionItemSkeleton />
+              </>
             ) : recentTransactions.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
                 Belum ada transaksi. Mulai tambahkan transaksi pertama Anda!
