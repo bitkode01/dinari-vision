@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Camera, Upload, X, Check, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Camera, Upload, X, Check, Loader2, SwitchCamera } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,9 +20,86 @@ export const ReceiptScanner = ({ open, onOpenChange, onAmountDetected }: Receipt
   const [extractedText, setExtractedText] = useState("");
   const [detectedAmount, setDetectedAmount] = useState<number | null>(null);
   const [editableAmount, setEditableAmount] = useState("");
+  const [showCamera, setShowCamera] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Start camera
+  const startCamera = async () => {
+    setCameraError(null);
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: facingMode,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false,
+      });
+      
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      setShowCamera(true);
+      toast.success("Kamera aktif");
+    } catch (error) {
+      console.error("Camera error:", error);
+      setCameraError("Tidak dapat mengakses kamera. Silakan gunakan galeri.");
+      toast.error("Akses kamera dibutuhkan untuk scan struk.");
+    }
+  };
+
+  // Stop camera
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  // Switch camera (front/back)
+  const switchCamera = () => {
+    stopCamera();
+    setFacingMode(prev => prev === "user" ? "environment" : "user");
+  };
+
+  // Capture photo from camera
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0);
+    
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setSelectedImage(base64);
+        stopCamera();
+        processOCR(base64);
+        toast.success("Gambar berhasil diambil");
+      };
+      reader.readAsDataURL(blob);
+    }, "image/jpeg", 0.95);
+  };
+
+  // Handle file selection from gallery
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -41,6 +118,20 @@ export const ReceiptScanner = ({ open, onOpenChange, onAmountDetected }: Receipt
     };
     reader.readAsDataURL(file);
   };
+
+  // Re-start camera when facing mode changes
+  useEffect(() => {
+    if (showCamera && !stream) {
+      startCamera();
+    }
+  }, [facingMode]);
+
+  // Cleanup on unmount or close
+  useEffect(() => {
+    if (!open) {
+      stopCamera();
+    }
+  }, [open]);
 
   const processOCR = async (imageBase64: string) => {
     setIsProcessing(true);
@@ -86,11 +177,14 @@ export const ReceiptScanner = ({ open, onOpenChange, onAmountDetected }: Receipt
   };
 
   const handleClose = () => {
+    stopCamera();
     setSelectedImage(null);
     setExtractedText("");
     setDetectedAmount(null);
     setEditableAmount("");
     setIsProcessing(false);
+    setShowCamera(false);
+    setCameraError(null);
     onOpenChange(false);
   };
 
@@ -102,42 +196,92 @@ export const ReceiptScanner = ({ open, onOpenChange, onAmountDetected }: Receipt
         </DialogHeader>
 
         <div className="space-y-4">
-          {!selectedImage ? (
+          {!selectedImage && !showCamera ? (
             <div className="space-y-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 className="w-full h-24 flex flex-col gap-2"
-                onClick={() => cameraInputRef.current?.click()}
+                onClick={startCamera}
               >
                 <Camera className="h-8 w-8" />
-                <span>Ambil Foto</span>
+                <span>Buka Kamera</span>
               </Button>
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
 
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-24 flex flex-col gap-2"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="h-8 w-8" />
-                <span>Pilih dari Galeri</span>
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
+              {cameraError && (
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground mb-2">{cameraError}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-20 flex flex-col gap-2"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-6 w-6" />
+                    <span>Pilih dari Galeri</span>
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </div>
+              )}
+            </div>
+          ) : showCamera ? (
+            <div className="space-y-4">
+              {/* Camera Preview */}
+              <div className="relative rounded-lg overflow-hidden bg-black">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-[400px] object-cover"
+                />
+                {/* Guideline Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="border-2 border-white border-dashed rounded-lg w-4/5 h-3/4 pointer-events-none">
+                    <div className="absolute top-2 left-2 right-2 text-center">
+                      <p className="text-white text-sm bg-black/50 rounded px-2 py-1 inline-block">
+                        Posisikan struk dalam kotak
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Hidden canvas for capture */}
+              <canvas ref={canvasRef} className="hidden" />
+
+              {/* Camera Controls */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={stopCamera}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Batalkan
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={switchCamera}
+                >
+                  <SwitchCamera className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  onClick={capturePhoto}
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Ambil Foto
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
