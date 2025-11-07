@@ -6,6 +6,7 @@ import { SummaryCard } from "@/components/SummaryCard";
 import { FeatureButton } from "@/components/FeatureButton";
 import { TransactionItem } from "@/components/TransactionItem";
 import { BottomNav } from "@/components/BottomNav";
+import { AddTransactionDialog } from "@/components/AddTransactionDialog";
 import { TrendingUp, TrendingDown, Camera, FileText, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
@@ -134,6 +135,9 @@ const Index = () => {
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Floating Add Button */}
+      <AddTransactionDialog />
     </div>
   );
 };
