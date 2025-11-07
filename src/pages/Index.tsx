@@ -1,21 +1,61 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useTransactions, type Transaction } from "@/hooks/useTransactions";
 import { BalanceCard } from "@/components/BalanceCard";
 import { SummaryCard } from "@/components/SummaryCard";
 import { FeatureButton } from "@/components/FeatureButton";
 import { TransactionItem } from "@/components/TransactionItem";
 import { BottomNav } from "@/components/BottomNav";
 import { AddTransactionDialog } from "@/components/AddTransactionDialog";
-import { TrendingUp, TrendingDown, Camera, FileText, LogOut, Loader2 } from "lucide-react";
+import { EditTransactionDialog } from "@/components/EditTransactionDialog";
+import { TrendingUp, TrendingDown, Camera, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const Index = () => {
-  const { user, signOut } = useAuth();
-  const { transactions, isLoading, summary } = useTransactions();
+  const { user } = useAuth();
+  const { transactions, isLoading, summary, deleteTransaction } = useTransactions();
   const [activeTab, setActiveTab] = useState("home");
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  // Fetch user profile
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!user,
+  });
 
   // Redirect to auth if not authenticated
   useEffect(() => {
@@ -27,23 +67,21 @@ const Index = () => {
   // Get recent transactions (top 4)
   const recentTransactions = transactions.slice(0, 4);
 
+  const handleDelete = (id: string) => {
+    deleteTransaction(id);
+    setDeleteConfirmId(null);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-8 pb-6">
-        <div className="text-center flex-1">
+      <div className="px-6 pt-8 pb-6">
+        <div className="flex items-center justify-between mb-2">
           <h1 className="text-3xl font-bold text-foreground">Dinari Wallet</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Kelola keuangan dengan mudah</p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={signOut}
-          className="text-muted-foreground hover:text-destructive"
-          title="Keluar"
-        >
-          <LogOut className="h-5 w-5" />
-        </Button>
+        <p className="text-sm text-muted-foreground">
+          Selamat datang, {profile?.full_name || 'User'}! 👋
+        </p>
       </div>
 
       {/* Main Content */}
@@ -79,17 +117,17 @@ const Index = () => {
         <div className="grid grid-cols-2 gap-4">
           <FeatureButton
             title="Scan Struk"
-            description="Input transaksi dari foto"
+            description="Segera hadir!"
             icon={Camera}
             gradient="purple"
-            onClick={() => console.log("Scan struk")}
+            onClick={() => toast.info("Fitur scan struk akan segera hadir!")}
           />
           <FeatureButton
-            title="Semua Riwayat"
-            description="Lihat semua transaksi"
+            title="Pengaturan"
+            description="Kelola akun Anda"
             icon={FileText}
             gradient="blue"
-            onClick={() => console.log("Lihat riwayat")}
+            onClick={() => navigate("/settings")}
           />
         </div>
 
@@ -119,13 +157,17 @@ const Index = () => {
               recentTransactions.map((transaction) => (
                 <TransactionItem
                   key={transaction.id}
+                  id={transaction.id}
                   title={transaction.title}
                   amount={Number(transaction.amount)}
                   type={transaction.type}
+                  category={transaction.category}
                   date={formatDistanceToNow(new Date(transaction.date), {
                     addSuffix: true,
                     locale: localeId,
                   })}
+                  onEdit={() => setEditingTransaction(transaction)}
+                  onDelete={() => setDeleteConfirmId(transaction.id)}
                 />
               ))
             )}
@@ -138,6 +180,34 @@ const Index = () => {
 
       {/* Floating Add Button */}
       <AddTransactionDialog />
+
+      {/* Edit Transaction Dialog */}
+      <EditTransactionDialog
+        transaction={editingTransaction}
+        open={!!editingTransaction}
+        onOpenChange={(open) => !open && setEditingTransaction(null)}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Transaksi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Transaksi akan dihapus secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
